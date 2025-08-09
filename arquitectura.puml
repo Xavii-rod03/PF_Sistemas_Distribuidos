@@ -1,0 +1,39 @@
+@startuml
+title Arquitectura Plataforma P2P con Pub/Sub
+
+actor Usuario as U
+
+rectangle "Frontend (HTML/JS)" as FE {
+    [Reproductor de Video]
+}
+
+rectangle "API de Gestión (Pub/Sub)" as API {
+    [Registro de nodos y sus fragmentos]
+    [Publicación de eventos de nuevos fragmentos]
+}
+
+rectangle "Nodo 1" as N1 {
+    [Servidor Flask]
+    [Carpeta de fragmentos locales]
+    [Cliente Pub/Sub para API]
+}
+
+rectangle "Nodo 2" as N2 {
+    [Servidor Flask]
+    [Carpeta de fragmentos locales]
+    [Cliente Pub/Sub para API]
+}
+
+U --> FE : Abre el reproductor en el navegador
+FE --> N1 : Solicita fragmentos disponibles
+FE --> N2 : Solicita fragmentos disponibles
+
+N1 --> API : POST /registrar fragmentos
+N2 --> API : POST /registrar fragmentos
+API --> N1 : Evento de fragmento nuevo disponible
+API --> N2 : Evento de fragmento nuevo disponible
+
+' Comunicación directa P2P
+N1 --> N2 : Descarga fragmentos que le faltan
+N2 --> N1 : Descarga fragmentos que le faltan
+@enduml

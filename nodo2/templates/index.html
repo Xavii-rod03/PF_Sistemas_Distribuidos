@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reproductor P2P</title>
+<style>
+  body{ margin:0; height:100vh; display:flex; align-items:center; justify-content:center; background: #f5f7fa; font-family: Arial, sans-serif; }
+  .player { width:800px; text-align:center; }
+  video{ width:800px; height:450px; border-radius:12px; background:#000; box-shadow:0 8px 22px rgba(0,0,0,0.15); }
+  .btn{ margin-top:12px; padding:10px 18px; border-radius:8px; border:none; background:#1976d2; color:white; cursor:pointer; font-size:16px;}
+  .info{ margin-top:8px; color:#444; font-size:14px;}
+</style>
+</head>
+<body>
+  <div class="player">
+    <video id="player" autoplay muted playsinline></video>
+    <div>
+      <button id="enable" class="btn">▶ Iniciar con audio</button>
+    </div>
+    <div class="info" id="status">Estado: cargando lista de fragmentos...</div>
+  </div>
+
+<script>
+(async function(){
+  const player = document.getElementById('player');
+  const btn = document.getElementById('enable');
+  const status = document.getElementById('status');
+  let lista = [];
+  let idx = 0;
+
+  async function obtenerLista(){
+    try {
+      const r = await fetch('/lista_fragmentos');
+      lista = await r.json();
+      lista.sort((a,b)=>{
+        const na = parseInt(a.split('_').pop()) || 0;
+        const nb = parseInt(b.split('_').pop()) || 0;
+        return na - nb;
+      });
+      status.textContent = `Fragmentos encontrados: ${lista.length}`;
+    } catch(e){
+      status.textContent = 'Error obteniendo lista';
+      console.error(e);
+    }
+  }
+
+  async function playNext(){
+    if(idx >= lista.length){
+      status.textContent = 'Reproducción finalizada';
+      return;
+    }
+    const file = lista[idx++];
+    status.textContent = `Reproduciendo ${file} (${idx}/${lista.length})`;
+    player.src = `/fragmento/${file}`;
+    try { await player.play(); } catch(e){ console.log('Autoplay bloqueado'); }
+  }
+
+  player.addEventListener('ended', playNext);
+
+  btn.addEventListener('click', ()=>{
+    player.muted = false;
+    btn.style.display = 'none';
+    player.play();
+  }, { once: true });
+
+  await obtenerLista();
+  playNext();
+})();
+</script>
+</body>
+</html>
